@@ -1,0 +1,6 @@
+# Core training dependencies
+torch>=2.0.0
+tokenizers>=0.15.0
+tqdm>=4.65.0
+numpy>=1.24.0
+pyyaml>=6.0

@@ -1,0 +1,28 @@
+import torch
+import torch.nn as nn
+
+
+class RMSNorm(nn.Module):
+    def __init__(
+        self,
+        embedding_dim: int,
+        eps: float = 1e-6,
+    ):
+        super().__init__()
+
+        self.eps = eps
+
+        self.weight = nn.Parameter(
+            torch.ones(embedding_dim)
+        )
+
+    def forward(
+        self,
+        x: torch.Tensor,
+    ) -> torch.Tensor:
+
+        rms = torch.rsqrt(
+            x.pow(2).mean(dim=-1, keepdim=True) + self.eps
+        )
+
+        return self.weight * (x * rms)

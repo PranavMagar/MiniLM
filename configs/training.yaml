@@ -1,0 +1,38 @@
+training:
+  epochs: 10
+  batch_size: 32            # increase on Colab GPU (T4: 32–64, A100: 128+)
+  learning_rate: 0.0003
+  weight_decay: 0.1
+  warmup_steps: 1000
+  gradient_clip: 1.0
+  context_length: 256
+  stride: 128
+  num_workers: 2            # set to 0 on Windows; 2-4 on Colab Linux
+  pin_memory: true
+  seed: 42
+  val_fraction: 0.05
+
+checkpoint:
+  save_every_steps: 500
+
+generation:
+  max_new_tokens: 200
+  temperature: 0.8
+  top_k: 40
+  top_p: 0.9
+
+# ---------------------------------------------------------------------------
+# Google Drive / custom output paths (optional)
+#
+# Leave these empty ("") to use the default project-relative directories.
+# On Colab, set them to point to your mounted Google Drive, e.g.:
+#
+#   checkpoint_dir: /content/drive/MyDrive/FinanceLM/checkpoints
+#   processed_file: /content/drive/MyDrive/FinanceLM/data/tokenized.pt
+#   tokenizer_file: /content/drive/MyDrive/FinanceLM/data/tokenizer.json
+# ---------------------------------------------------------------------------
+paths:
+  checkpoint_dir: ""        # override CHECKPOINT_DIR
+  processed_file: ""        # override PROCESSED_FILE
+  tokenizer_file: ""        # override TOKENIZER_FILE
+  minitext8_file: ""        # override MINITEXT8_FILE

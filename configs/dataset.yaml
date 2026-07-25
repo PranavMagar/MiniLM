@@ -1,0 +1,16 @@
+dataset:
+  name: minitext8
+  root: data/minitext8
+
+tokenizer:
+  vocab_size: 8192
+  special_tokens:
+    - "[PAD]"
+    - "[UNK]"
+    - "[BOS]"
+    - "[EOS]"
+
+training:
+  context_length: 256
+  stride: 128
+  batch_size: 8
