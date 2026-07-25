@@ -146,6 +146,18 @@ def main() -> None:
     args = parse_args()
     logging.getLogger().setLevel(getattr(logging, args.log_level))
 
+    # ── config & path resolution (must come first) ────────────────────
+    # _resolve_paths() assigns PROCESSED_FILE, TOKENIZER_FILE, and
+    # CHECKPOINT_DIR.  These must be resolved before the pre-flight block
+    # reads them, otherwise Python's local-variable rule causes an
+    # UnboundLocalError because the compiler sees the tuple-unpack
+    # assignment below and marks all three as locals for the whole function.
+    cfg_yaml = _load_training_cfg()
+    tr       = cfg_yaml.get("training",   {})
+    ck       = cfg_yaml.get("checkpoint", {})
+
+    PROCESSED_FILE, TOKENIZER_FILE, CHECKPOINT_DIR = _resolve_paths(cfg_yaml)
+
     # ── pre-flight checks ─────────────────────────────────────────────
     for path, hint in [
         (PROCESSED_FILE,  "python scripts/prepare_dataset.py"),
@@ -154,14 +166,6 @@ def main() -> None:
         if not path.exists():
             logger.error("Not found: %s  →  run: %s", path, hint)
             sys.exit(1)
-
-    # ── config ────────────────────────────────────────────────────────
-    cfg_yaml = _load_training_cfg()
-    tr       = cfg_yaml.get("training",   {})
-    ck       = cfg_yaml.get("checkpoint", {})
-
-    PROCESSED_FILE, TOKENIZER_FILE, CHECKPOINT_DIR = _resolve_paths(cfg_yaml)
-    gn       = cfg_yaml.get("generation", {})
 
     config = ModelConfig()
     config.max_seq_length = args.context_length or tr.get("context_length", 256)
