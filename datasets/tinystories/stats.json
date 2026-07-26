@@ -1,0 +1,16 @@
+[
+  {
+    "split": "train",
+    "rows": 2119719,
+    "characters": 1899973203,
+    "file_size_bytes": 1929849847,
+    "skipped": false
+  },
+  {
+    "split": "validation",
+    "rows": 21990,
+    "characters": 19190318,
+    "file_size_bytes": 19486044,
+    "skipped": false
+  }
+]

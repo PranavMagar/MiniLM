@@ -20,6 +20,9 @@ data/processed/
 data/cache/
 data/raw/
 
+# Datasets — large raw text files not tracked in git
+datasets/tinystories/*.txt
+
 # Checkpoints — large model files not tracked in git
 checkpoints/
 
