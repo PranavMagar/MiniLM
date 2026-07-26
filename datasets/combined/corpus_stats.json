@@ -1,0 +1,29 @@
+{
+  "output": "C:\\Users\\Pranav\\Desktop\\FinanceLM\\datasets\\combined\\corpus.txt",
+  "file_size_bytes": 2171998767,
+  "total_documents": 11166715,
+  "total_characters": 1979039509,
+  "total_words": 388525877,
+  "estimated_tokens": 494759877,
+  "separator": "<|endoftext|>",
+  "min_chars": 20,
+  "elapsed_s": 576.4,
+  "sources": [
+    {
+      "name": "MiniText8",
+      "path": "C:\\Users\\Pranav\\Desktop\\FinanceLM\\data\\minitext8\\minitext8.txt",
+      "mode": "single",
+      "documents": 1,
+      "characters": 99999999,
+      "words": 17005207
+    },
+    {
+      "name": "TinyStories-train",
+      "path": "C:\\Users\\Pranav\\Desktop\\FinanceLM\\datasets\\tinystories\\train.txt",
+      "mode": "paragraph",
+      "documents": 11166714,
+      "characters": 1879039510,
+      "words": 371520670
+    }
+  ]
+}
