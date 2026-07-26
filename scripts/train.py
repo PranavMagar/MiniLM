@@ -271,7 +271,13 @@ def main() -> None:
     t0 = time.perf_counter()
 
     for epoch in range(start_epoch, config.epochs):
-        train_loss = trainer.train_epoch(train_loader, epoch=epoch + 1)
+        train_loss = trainer.train_epoch(
+            train_loader,
+            epoch=epoch + 1,
+            checkpoint_manager=manager,
+            checkpoint_config=config,
+            save_every_steps=save_every_steps,
+        )
         val_loss   = trainer.validate_epoch(val_loader, epoch=epoch + 1)
         lr_now     = optimizer.param_groups[0]["lr"]
 
@@ -295,15 +301,17 @@ def main() -> None:
             scheduler=scheduler, scaler=trainer.scaler,
             global_step=trainer.global_step,
         )
-        if train_loss < best_loss:
-            best_loss = train_loss
+        # Track best on validation loss, not train loss.
+        # Using train loss for best would overfit the selection.
+        if val_loss < best_loss:
+            best_loss = val_loss
             manager.save_best(
                 model=model, optimizer=optimizer,
-                epoch=epoch + 1, loss=train_loss, config=config,
+                epoch=epoch + 1, loss=val_loss, config=config,
                 scheduler=scheduler, scaler=trainer.scaler,
                 global_step=trainer.global_step,
             )
-            logger.info("New best checkpoint  loss=%.4f", best_loss)
+            logger.info("New best checkpoint  val_loss=%.4f", best_loss)
 
     elapsed = time.perf_counter() - t0
     logger.info("=" * 60)

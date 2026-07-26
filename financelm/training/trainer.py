@@ -72,6 +72,9 @@ class Trainer:
         self,
         dataloader: DataLoader,
         epoch: int = 0,
+        checkpoint_manager: object | None = None,
+        checkpoint_config: object | None = None,
+        save_every_steps: int = 0,
     ) -> float:
         """
         Run one training epoch.
@@ -82,6 +85,14 @@ class Trainer:
             Training data loader.
         epoch:
             Current epoch number (for tqdm display only).
+        checkpoint_manager:
+            Optional CheckpointManager. When provided together with
+            ``save_every_steps > 0``, a step-level checkpoint is saved
+            every ``save_every_steps`` optimizer updates.
+        checkpoint_config:
+            ModelConfig passed to the checkpoint manager.
+        save_every_steps:
+            Save a step checkpoint every N steps (0 = disabled).
 
         Returns
         -------
@@ -134,13 +145,27 @@ class Trainer:
             total_loss       += loss.item()
             self.global_step += 1
 
+            # Step-level checkpoint: save every save_every_steps optimizer steps.
+            if (
+                save_every_steps > 0
+                and checkpoint_manager is not None
+                and checkpoint_config is not None
+                and self.global_step % save_every_steps == 0
+            ):
+                checkpoint_manager.save_step(
+                    model=self.model,
+                    optimizer=self.optimizer,
+                    epoch=epoch,
+                    loss=loss.item(),
+                    config=checkpoint_config,
+                    scheduler=self.scheduler,
+                    scaler=self.scaler,
+                    global_step=self.global_step,
+                )
+
             pbar.set_postfix(loss=f"{loss.item():.4f}", step=self.global_step)
 
         return total_loss / n_batches
-
-    # ------------------------------------------------------------------
-    # Validation epoch
-    # ------------------------------------------------------------------
 
     @torch.no_grad()
     def validate_epoch(
