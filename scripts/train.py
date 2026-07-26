@@ -36,7 +36,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 import torch
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from financelm.data.tokenizer_dataset import create_processed_dataloader
 from financelm.model.config import ModelConfig

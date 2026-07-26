@@ -124,12 +124,18 @@ class Trainer:
             self.scaler.step(self.optimizer)
             self.scaler.update()
 
+            # Step the scheduler once per optimizer update, not once per epoch.
+            # The LambdaLR scheduler is built with a per-step lr_lambda
+            # (linear warmup then cosine decay over total_steps), so it must
+            # advance by 1 every time the optimizer takes a step.
+            # Stepping once per epoch would make warmup and decay 19000× too slow.
+            self.scheduler.step()
+
             total_loss       += loss.item()
             self.global_step += 1
 
             pbar.set_postfix(loss=f"{loss.item():.4f}", step=self.global_step)
 
-        self.scheduler.step()
         return total_loss / n_batches
 
     # ------------------------------------------------------------------
