@@ -1,4 +1,4 @@
-﻿"""
+""
 scripts/generate.py
 ====================
 Interactive text generation with a trained FinanceLM checkpoint.
@@ -41,7 +41,6 @@ from financelm.inference.sampling import SamplingStrategy
 from financelm.model.config import ModelConfig
 from financelm.model.model import FinanceLM
 from financelm.paths import CHECKPOINT_DIR, TOKENIZER_FILE
-from financelm.training.checkpoint import CheckpointManager
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -91,7 +90,6 @@ def main() -> None:
         CHECKPOINT_DIR / "latest.pt"
     )
 
-    manager = CheckpointManager()
     if not ckpt_path.exists():
         print(f"\nCheckpoint not found: {ckpt_path}")
         print("Run:  python scripts/train.py")
@@ -104,19 +102,29 @@ def main() -> None:
 
     # ── model ─────────────────────────────────────────────────────────
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    config = ModelConfig()
-    model  = FinanceLM(config).to(device)
 
-    ckpt = manager.load(
-        checkpoint_path=ckpt_path,
-        model=model,
-        device=device,
-        restore_rng=args.seed is None,
-    )
+    # Load raw checkpoint first to read the saved config, then build the
+    # model with exact same dimensions used during training.
+    raw_ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+    saved_cfg = raw_ckpt.get("config", {})
+    config = ModelConfig(
+        vocab_size       = saved_cfg.get("vocab_size",       ModelConfig.vocab_size),
+        embedding_dim    = saved_cfg.get("embedding_dim",    ModelConfig.embedding_dim),
+        num_heads        = saved_cfg.get("num_heads",        ModelConfig.num_heads),
+        num_layers       = saved_cfg.get("num_layers",       ModelConfig.num_layers),
+        feed_forward_dim = saved_cfg.get("feed_forward_dim", ModelConfig.feed_forward_dim),
+        max_seq_length   = saved_cfg.get("max_seq_length",   ModelConfig.max_seq_length),
+        dropout          = saved_cfg.get("dropout",          ModelConfig.dropout),
+    ) if saved_cfg else ModelConfig()
+
+    model = FinanceLM(config).to(device)
+    model.load_state_dict(raw_ckpt["model_state_dict"])
+    model.eval()
+
     print(
         f"\nLoaded  {ckpt_path.name}"
-        f"  (epoch={ckpt.get('epoch', '?')}"
-        f"  loss={ckpt.get('loss', float('nan')):.4f})"
+        f"  (epoch={raw_ckpt.get('epoch', '?')}"
+        f"  loss={raw_ckpt.get('loss', float('nan')):.4f})"
     )
 
     strategy = _STRATEGY_MAP[args.strategy]
