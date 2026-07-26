@@ -104,32 +104,48 @@ def check_dependencies() -> bool:
 def check_artefacts() -> bool:
     _section("Pipeline artefacts")
     from financelm.paths import (
-        MINITEXT8_FILE,
         PROCESSED_FILE,
         TOKENIZER_FILE,
         CHECKPOINT_DIR,
         DATASET_CONFIG,
         TRAINING_CONFIG,
     )
+    from pathlib import Path
+    project_root    = Path(__file__).resolve().parent.parent
+    combined_corpus = project_root / "datasets" / "combined" / "corpus.txt"
+    minitext8_file  = project_root / "data" / "minitext8" / "minitext8.txt"
 
     ok = True
-    items = [
-        (MINITEXT8_FILE,   "MiniText8 corpus",         "python scripts/download_minitext8.py"),
-        (TOKENIZER_FILE,   "Tokenizer (tokenizer.json)","python scripts/train_tokenizer.py"),
-        (PROCESSED_FILE,   "Processed dataset (.pt)",   "python scripts/prepare_dataset.py"),
-        (DATASET_CONFIG,   "configs/dataset.yaml",      None),
-        (TRAINING_CONFIG,  "configs/training.yaml",     None),
+
+    # ── Required artefacts ───────────────────────────────────────────
+    required = [
+        (TOKENIZER_FILE,  "Tokenizer (tokenizer.json)", "python scripts/train_tokenizer.py"),
+        (PROCESSED_FILE,  "Processed dataset (.pt)",    "python scripts/prepare_dataset.py"),
+        (DATASET_CONFIG,  "configs/dataset.yaml",       None),
+        (TRAINING_CONFIG, "configs/training.yaml",      None),
     ]
-    for path, label, hint in items:
+    for path, label, hint in required:
         if path.exists():
             size = path.stat().st_size
-            _ok(label, f"{size:,} bytes  →  {path}")
+            _ok(label, f"{size:,} bytes")
         else:
             msg = f"Run:  {hint}" if hint else f"Missing: {path}"
             _fail(label, msg)
             ok = False
 
-    # Checkpoints — optional (not needed before first training run)
+    # ── Corpus — combined preferred, MiniText8 acceptable ────────────
+    if combined_corpus.exists():
+        size = combined_corpus.stat().st_size
+        _ok("Combined corpus", f"{size:,} bytes")
+    elif minitext8_file.exists():
+        size = minitext8_file.stat().st_size
+        _warn("Combined corpus not found", "run: python scripts/build_corpus.py")
+        _ok("MiniText8 corpus (fallback)", f"{size:,} bytes")
+    else:
+        _fail("Corpus", "run: python scripts/download_minitext8.py then build_corpus.py")
+        ok = False
+
+    # ── Checkpoints — optional before first training run ─────────────
     latest = CHECKPOINT_DIR / "latest.pt"
     if latest.exists():
         _ok("Latest checkpoint", str(latest))
