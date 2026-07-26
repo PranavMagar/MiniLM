@@ -52,7 +52,6 @@ from financelm.inference.sampling import SamplingStrategy
 from financelm.model.config import ModelConfig
 from financelm.model.model import FinanceLM
 from financelm.paths import CHECKPOINT_DIR, PROCESSED_FILE, TOKENIZER_FILE
-from financelm.training.checkpoint import CheckpointManager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -140,16 +139,26 @@ def main() -> None:
 
     # ── model ─────────────────────────────────────────────────────────
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    config = ModelConfig()
-    model  = FinanceLM(config).to(device)
 
-    manager = CheckpointManager()
-    ckpt    = manager.load(
-        checkpoint_path=ckpt_path,
-        model=model,
-        device=device,
-        restore_rng=False,
-    )
+    # Load the raw checkpoint payload first so we can read the saved config
+    # before constructing the model. This ensures evaluation always uses
+    # the exact same architecture that was used during training.
+    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+
+    saved_cfg = ckpt.get("config", {})
+    config = ModelConfig(
+        vocab_size       = saved_cfg.get("vocab_size",       ModelConfig.vocab_size),
+        embedding_dim    = saved_cfg.get("embedding_dim",    ModelConfig.embedding_dim),
+        num_heads        = saved_cfg.get("num_heads",        ModelConfig.num_heads),
+        num_layers       = saved_cfg.get("num_layers",       ModelConfig.num_layers),
+        feed_forward_dim = saved_cfg.get("feed_forward_dim", ModelConfig.feed_forward_dim),
+        max_seq_length   = saved_cfg.get("max_seq_length",   ModelConfig.max_seq_length),
+        dropout          = saved_cfg.get("dropout",          ModelConfig.dropout),
+    ) if saved_cfg else ModelConfig()
+
+    model = FinanceLM(config).to(device)
+    model.load_state_dict(ckpt["model_state_dict"])
+    model.eval()
 
     total_params = sum(p.numel() for p in model.parameters())
 
