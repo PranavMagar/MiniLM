@@ -20,7 +20,7 @@ class Generator:
         model: FinanceLM,
         tokenizer_path: Path | str,
         device: torch.device,
-        max_seq_length: int = 16,
+        max_seq_length: int = 256,
     ):
         self.model = model
         self.device = device
