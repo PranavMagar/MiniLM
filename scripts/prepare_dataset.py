@@ -62,7 +62,6 @@ from tqdm import tqdm
 
 from financelm.paths import (
     DATASET_CONFIG,
-    MINITEXT8_FILE,
     PROCESSED_FILE,
     TOKENIZER_FILE,
 )
