@@ -33,7 +33,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import torch
 from tokenizers import Tokenizer
 
-from financelm.paths import MINITEXT8_FILE, PROCESSED_FILE, TOKENIZER_FILE
+from financelm.paths import PROCESSED_FILE, TOKENIZER_FILE
+
+_PROJECT_ROOT   = Path(__file__).resolve().parent.parent
+_COMBINED_CORPUS = _PROJECT_ROOT / "datasets" / "combined" / "corpus.txt"
+_MINITEXT8_FILE  = _PROJECT_ROOT / "data" / "minitext8" / "minitext8.txt"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -65,12 +69,19 @@ def _check(name: str, fn: Callable[[], str]) -> Check:
 # ---------------------------------------------------------------------------
 
 def _corpus_exists() -> str:
-    if not MINITEXT8_FILE.exists():
-        raise FileNotFoundError(f"Not found: {MINITEXT8_FILE}")
-    size = MINITEXT8_FILE.stat().st_size
-    if size == 0:
-        raise ValueError("File is empty.")
-    return f"{size:,} bytes"
+    # Check combined corpus first (the primary training source).
+    # Fall back to checking MiniText8 if the combined corpus hasn't been built yet.
+    if _COMBINED_CORPUS.exists():
+        size = _COMBINED_CORPUS.stat().st_size
+        return f"{size:,} bytes  (combined corpus)"
+    if _MINITEXT8_FILE.exists():
+        size = _MINITEXT8_FILE.stat().st_size
+        return f"{size:,} bytes  (minitext8 — run build_corpus.py to build combined)"
+    raise FileNotFoundError(
+        f"Neither combined corpus nor MiniText8 found.\n"
+        f"  Expected: {_COMBINED_CORPUS}\n"
+        f"  Run: python scripts/build_corpus.py"
+    )
 
 
 def _tokenizer_exists() -> str:
